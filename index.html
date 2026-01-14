@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>隱私保護票券生成器</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 20px auto; padding: 20px; line-height: 1.6; }
+        .control-group { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        textarea { width: 100%; height: 100px; margin-top: 5px; }
+        .canvas-container { margin-top: 20px; border: 1px solid #ccc; overflow: auto; display: none; }
+        
+        button { border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; font-weight: bold; margin-right: 5px; }
+        #processBtn { background: #007bff; color: white; }
+        #processBtn:hover { background: #0056b3; }
+        #downloadBtn { background: #28a745; color: white; display: none; }
+        #downloadBtn:hover { background: #218838; }
+        
+        #status { color: #d9534f; font-weight: bold; margin-top: 10px; }
+
+        /* 預覽區域樣式 */
+        #previewArea { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 15px; 
+            margin-top: 20px; 
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+        .preview-item { text-align: center; }
+        .preview-item img { 
+            width: 100%; 
+            border: 1px solid #ddd; 
+            cursor: pointer; 
+            transition: transform 0.2s;
+            border-radius: 4px;
+        }
+        .preview-item img:hover { transform: scale(1.05); }
+        .preview-item span { font-size: 12px; color: #666; display: block; margin-top: 5px; }
+
+        /* 放大顯示遮罩 (Modal) */
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            cursor: zoom-out;
+        }
+        #modal img { max-width: 90%; max-height: 90%; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+    </style>
+</head>
+<body>
+
+    <h2>🎫 票券批量生成工具 (全本地端處理)</h2>
+    <p>說明：所有處理均在您的瀏覽器完成，不會上傳任何資料至伺服器。</p>
+
+    <div class="control-group">
+        <label>1. 上傳底圖 (需包含紅、綠、藍定位塊)</label>
+        <input type="file" id="imageInput" accept="image/*">
+
+        <label>2. 輸入序號與備註 (格式：序號,備註內容，每行一筆)</label>
+        <textarea id="dataInput" placeholder="SN001,範例備註一&#10;SN002,範例備註二" autocomplete="off" spellcheck="false"></textarea>
+
+        <label>3. 設定顏色與對齊</label>
+        底色：<input type="color" id="bgColor" value="#FFFFFF"> 
+        序號顏色：<input type="color" id="snColor" value="#000000"> 
+        備註顏色：<input type="color" id="noteColor" value="#000000">
+        <br>
+        藍區對齊：
+        <select id="textAlign">
+            <option value="center">置中</option>
+            <option value="left">靠左</option>
+        </select>
+
+        <div class="btn-group">
+            <button id="processBtn">1. 開始處理並產生預覽</button>
+            <button id="downloadBtn">2. 下載全部 ZIP</button>
+        </div>
+    </div>
+
+    <div id="status"></div>
+    
+    <div id="previewArea"></div>
+
+    <div id="modal" onclick="this.style.display='none'">
+        <img id="modalImg" src="" alt="放大圖">
+    </div>
+
+    <canvas id="mainCanvas" style="display:none;"></canvas>
+    <svg id="barcodeSVG" style="display:none;"></svg>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const dataInput = document.getElementById('dataInput');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const status = document.getElementById('status');
+        const previewArea = document.getElementById('previewArea');
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        let currentZip = null; // 用於儲存產生的 ZIP 物件
+
+        // 點擊處理與預覽
+        processBtn.addEventListener('click', async () => {
+            const file = imageInput.files[0];
+            const rawData = dataInput.value.trim();
+            
+            if (!file || !rawData) {
+                alert("請上傳底圖並輸入序號資料");
+                return;
+            }
+
+            // 初始化介面
+            previewArea.innerHTML = "";
+            downloadBtn.style.display = "none";
+            currentZip = new JSZip();
+
+            status.innerText = "正在讀取底圖並偵測區塊...";
+            const img = await loadImage(file);
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+
+            // 偵測顏色區塊
+            const barcodeBox = findColorBox(255, 0, 0);
+            const snBox = findColorBox(0, 255, 0);
+            const noteBox = findColorBox(0, 0, 255);
+
+            if (!barcodeBox) {
+                status.innerText = "錯誤：找不到紅色定位塊";
+                return;
+            }
+
+            const lines = rawData.split('\n');
+            status.innerText = `開始處理 ${lines.length} 筆資料...`;
+
+            for (let i = 0; i < lines.length; i++) {
+                const [sn, note] = lines[i].split(',').map(s => s.trim());
+                if (!sn) continue;
+
+                // 繪圖邏輯
+                ctx.drawImage(img, 0, 0);
+                const bgHex = document.getElementById('bgColor').value;
+                fillBox(barcodeBox, bgHex);
+                const barcodeDataUrl = generateBarcode(sn, bgHex);
+                await drawBarcode(barcodeDataUrl, barcodeBox);
+
+                if (snBox) {
+                    fillBox(snBox, bgHex);
+                    drawText(sn, snBox, document.getElementById('snColor').value, "center", true);
+                }
+
+                if (noteBox) {
+                    fillBox(noteBox, bgHex);
+                    drawText(note || "", noteBox, document.getElementById('noteColor').value, document.getElementById('textAlign').value, false);
+                }
+
+                // 產出 Blob 加入 ZIP
+                const dataUrl = canvas.toDataURL('image/png');
+                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                currentZip.file(`result_${sn}.png`, blob);
+
+                // 產生縮圖預覽
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                const previewImg = document.createElement('img');
+                previewImg.src = dataUrl;
+                previewImg.onclick = () => showModal(dataUrl);
+                
+                const label = document.createElement('span');
+                label.innerText = sn;
+
+                previewItem.appendChild(previewImg);
+                previewItem.appendChild(label);
+                previewArea.appendChild(previewItem);
+            }
+
+            status.innerText = "預覽處理完成。";
+            downloadBtn.style.display = "inline-block";
+        });
+
+        // 點擊下載 ZIP
+        downloadBtn.addEventListener('click', async () => {
+            if (!currentZip) return;
+            status.innerText = "正在打包壓縮檔...";
+            const zipContent = await currentZip.generateAsync({type: "blob"});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(zipContent);
+            link.download = "tickets.zip";
+            link.click();
+            status.innerText = "下載完成。";
+        });
+
+        // 顯示放大圖
+        function showModal(src) {
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modalImg');
+            modalImg.src = src;
+            modal.style.display = 'flex';
+        }
+
+        // --- 核心工具函式 ---
+
+        function loadImage(file) {
+            return new Promise(res => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => res(img);
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function findColorBox(r, g, b) {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const idx = (y * canvas.width + x) * 4;
+                    if (data[idx] === r && data[idx+1] === g && data[idx+2] === b) {
+                        minX = Math.min(minX, x);
+                        minY = Math.min(minY, y);
+                        maxX = Math.max(maxX, x);
+                        maxY = Math.max(maxY, y);
+                    }
+                }
+            }
+            return maxX === -1 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+        }
+
+        function fillBox(box, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(box.x, box.y, box.w, box.h);
+        }
+
+        function generateBarcode(text, bgColor) {
+            const svg = document.getElementById('barcodeSVG');
+            JsBarcode(svg, text, {
+                format: "CODE128", displayValue: false, background: bgColor, margin: 0
+            });
+            const xml = new XMLSerializer().serializeToString(svg);
+            return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
+        }
+
+        function drawBarcode(url, box) {
+            return new Promise(res => {
+                const bImg = new Image();
+                bImg.onload = () => {
+                    ctx.drawImage(bImg, box.x, box.y, box.w, box.h);
+                    res();
+                };
+                bImg.src = url;
+            });
+        }
+
+        function drawText(text, box, color, align, isBold) {
+            ctx.fillStyle = color;
+            let fontSize = box.h * 0.8;
+            ctx.font = `${isBold ? 'bold' : ''} ${fontSize}px sans-serif`;
+            while (ctx.measureText(text).width > box.w - 10 && fontSize > 5) {
+                fontSize -= 2;
+                ctx.font = `${isBold ? 'bold' : ''} ${fontSize}px sans-serif`;
+            }
+            const metrics = ctx.measureText(text);
+            let x = box.x + (box.w - metrics.width) / 2;
+            if (align === "left") x = box.x + 5;
+            const y = box.y + (box.h + fontSize * 0.7) / 2;
+            ctx.fillText(text, x, y);
+        }
+    </script>
+</body>
+</html>
