@@ -55,6 +55,13 @@
             border-left: 5px solid var(--primary-color);
         }
 
+        .intro-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
         .intro-card p { margin: 5px 0; }
         .warning-text { color: #faad14; font-weight: bold; display: flex; align-items: center; gap: 5px; }
 
@@ -77,6 +84,21 @@
         .tag-red { background: var(--red-tag); }
         .tag-green { background: var(--green-tag); }
         .tag-blue { background: var(--blue-tag); }
+
+        #guideBtn {
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #guideBtn:hover {
+            background-color: #5a6268;
+        }
 
         /* 控制區塊樣式 */
         .control-group { 
@@ -125,20 +147,26 @@
             cursor: pointer;
         }
 
-        .setting-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            align-items: center;
+        /* 第三步驟網格排版修改點 */
+        .setting-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 分成左右兩等分 */
+            gap: 15px 40px; /* 行間距與列間距 */
             background: #fafafa;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             margin-top: 10px;
         }
 
-        .setting-item { display: flex; align-items: center; gap: 8px; }
-        input[type="color"] { border: none; width: 30px; height: 30px; cursor: pointer; background: none; }
-        select { padding: 5px 10px; border-radius: 4px; border: 1px solid #d9d9d9; }
+        .setting-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            white-space: nowrap;
+        }
+        
+        input[type="color"] { border: none; width: 30px; height: 30px; cursor: pointer; background: none; flex-shrink: 0; }
+        select { padding: 5px 10px; border-radius: 4px; border: 1px solid #d9d9d9; min-width: 100px; }
 
         /* 按鈕美化 */
         .btn-group { 
@@ -176,7 +204,6 @@
             font-weight: 500;
         }
 
-        /* 預覽區域樣式 */
         #previewArea { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
@@ -197,7 +224,6 @@
         .preview-item img { width: 100%; cursor: pointer; border-radius: 4px; border: 1px solid #f0f0f0; margin-bottom: 10px; }
         .preview-item span { font-size: 13px; color: #666; font-family: monospace; word-break: break-all; }
 
-        /* 點擊放大遮罩 */
         #modal {
             display: none;
             position: fixed;
@@ -220,8 +246,13 @@
     </div>
 
     <div class="intro-card">
-        <p>說明：本工具使用色塊標註欲修改區域，批量產出票券PNG圖檔(⚠️目前只支援CODE-128)。</p>
-        <p class="warning-text">⚠️ 所有處理均在瀏覽器記憶體完成，不會上傳資料。⚠️</p>
+        <div class="intro-flex">
+            <div>
+                <p>說明：本工具使用色塊標註欲修改區域，批量產出票券PNG圖檔(⚠️目前只支援CODE-128)。</p>
+                <p class="warning-text">⚠️ 所有處理均在瀏覽器記憶體完成，不會上傳資料。⚠️</p>
+            </div>
+            <button id="guideBtn" onclick="showModal('guide.png')">📖 操作說明 📖</button>
+        </div>
         
         <div class="tag-info">
             <span class="tag tag-red">紅🔴(255, 0, 0) #FF0000 : 條碼</span>
@@ -241,18 +272,19 @@
 
         <label class="step-label">3. 設定顏色與對齊</label>
         <span class="input-hint">可直接跨頁面吸色</span>
-        <div class="setting-row">
+        
+        <div class="setting-grid">
             <div class="setting-item">
                 圖檔底色：<input type="color" id="bgColor" value="#FFFFFF">
-            </div>
-            <div class="setting-item">
-                綠區🟢序號顏色：<input type="color" id="snColor" value="#000000">
             </div>
             <div class="setting-item">
                 藍區🔵自定義文字顏色：<input type="color" id="noteColor" value="#000000">
             </div>
             <div class="setting-item">
-                對齊：
+                綠區🟢序號顏色：<input type="color" id="snColor" value="#000000">
+            </div>
+            <div class="setting-item">
+                藍區🔵文字對齊：
                 <select id="textAlign">
                     <option value="center">置中</option>
                     <option value="left">靠左</option>
@@ -278,7 +310,6 @@
     </div>
 
     <script>
-        // 原始 JavaScript 邏輯保持不變
         const imageInput = document.getElementById('imageInput');
         const dataInput = document.getElementById('dataInput');
         const processBtn = document.getElementById('processBtn');
@@ -415,5 +446,4 @@
         }
     </script>
 </body>
-
 </html>
