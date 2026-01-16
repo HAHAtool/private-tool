@@ -69,16 +69,22 @@
             <div class="card">
                 <button class="guide-btn" onclick="document.getElementById('guide-dialog').showModal()">📖 說明 📖</button>
 
-                <dialog id="guide-dialog" style="width: 500px; border-radius: 8px; border: 1px solid #ccc; padding: 20px;">
+                <dialog id="guide-dialog" style="width: 450px; border-radius: 8px; border: 1px solid #ccc; padding: 20px;">
+                  <h3 style="margin-top: 0;">⚠️ 注意</h3>
+                      <div style="line-height: 2.0; text-align: left;">
+                        1. 目前只支援 CODE-128 。<br>
+                        2. 所有處理均在瀏覽器記憶體完成，不會上傳資料。
+                      </div>
+                  <br>
                   <h3 style="margin-top: 0;">📖 使用說明</h3>
-                  <div style="line-height: 1.6; text-align: left;">
-                    1. 序號定位： 資料第一行請填寫圖片上現有的 PIN 碼或序號。<br>
-                    2. 自動偵測： 上傳圖片，系統會自動標註紅框與綠框。<br>
-                    3. 修改/新增：左鍵畫框（新增）、右鍵點框（刪除）。<br>
-                    4. 文字大小： 高度自動跟隨框框，寬度允許超出。<br>
-                    5. 樣式調整： 可修改文字色彩，並切換對齊方式。<br>
-                    6. 下載： 預覽滿意後再下載打包ZIP。
-                  </div>
+                      <div style="line-height: 2.0; text-align: left;">
+                        1. 序號定位： 資料第一行請填寫圖片上現有的 PIN 碼或序號。<br>
+                        2. 自動偵測： 上傳圖片，系統會自動標註紅框與綠框。<br>
+                        3. 修改/新增：左鍵畫框（新增）、右鍵點框（刪除）。<br>
+                        4. 文字大小： 高度自動跟隨框框，寬度允許超出。<br>
+                        5. 樣式調整： 可修改文字色彩，並切換對齊方式。<br>
+                        6. 下載： 預覽滿意後再下載打包ZIP。
+                      </div>
                   <br>
                   <button onclick="this.closest('dialog').close()" style="float: right;">關閉</button>
                 </dialog>
