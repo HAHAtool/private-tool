@@ -310,7 +310,7 @@
             div.innerHTML = `<img src="${url}" onclick="showModal('${url}')"><br><small>${sn}</small>`;
             preview.appendChild(div);
         }
-        updateStatus("✅ 修改完成，請置下方查看預覽效果。");
+        updateStatus("✅ 修改完成，請至下方查看預覽效果。");
         document.getElementById('downloadBtn').style.display = "block";
         document.getElementById('downloadBtn').onclick = async () => {
             const content = await zip.generateAsync({type:"blob"});
@@ -339,4 +339,5 @@
     }
 </script>
 </body>
+
 </html>
