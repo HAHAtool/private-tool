@@ -11,98 +11,49 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 
     <style>
-        /* 基礎變數與排版設定 */
         :root { --red: #ff4d4f; --green: #52c41a; --blue: #1890ff; --bg: #f0f2f5; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; }
+        .container { max-width: 1300px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
         .layout { display: grid; grid-template-columns: 400px 1fr; gap: 20px; }
-
-        /* 頂部狀態顯示列 */
-        .status-bar { background: #e6f7ff; border: 1px solid #91d5ff; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; }
-
-        .panel { display: flex; flex-direction: column; gap: 15px; }
-
-        /* 卡片容器：修正寬度為 100% 以填滿 400px 的 panel */
-        .card {
-            border: 1px solid #eee;
-            padding: 15px;
-            border-radius: 8px;
-            background: #fafafa;
-            position: relative;
-            width: 100%;
-            box-sizing: border-box;
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
         }
 
-        /* 使用說明按鈕 */
+        .status-bar { background: #e6f7ff; border: 1px solid #91d5ff; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; }
+        .panel { display: flex; flex-direction: column; gap: 15px; }
+        .card { border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; position: relative; width: 100%; box-sizing: border-box; }
+
         .guide-btn { position: absolute; top: 10px; right: 10px; background: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        textarea { width: 100%; height: 120px; border: 1px solid #ddd; padding: 8px; box-sizing: border-box; line-height: 1.5; font-size: 14px; }
 
-        /* 文字輸入框：增加高度以符合多行 placeholder */
-        textarea { width: 100%; height: 120px; border: 1px solid #ddd; padding: 8px; box-sizing: border-box; line-height: 1.5; }
-
-        /* 繪製模式按鈕 */
         .mode-selector { display: flex; gap: 5px; margin-bottom: 10px; }
         .mode-btn { flex: 1; padding: 8px; border: 2px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 13px; }
         .mode-btn.active[data-type="barcode"] { background: var(--red); color: white; border-color: var(--red); }
         .mode-btn.active[data-type="sn"] { background: var(--green); color: white; border-color: var(--green); }
         .mode-btn.active[data-type="note"] { background: var(--blue); color: white; border-color: var(--blue); }
 
-        /* 樣式設定區域優化 */
         .setting-group { margin-bottom: 15px; }
         .group-title { font-weight: bold; display: block; margin-bottom: 8px; color: #333; }
-        .group-content {
-            margin-left: 20px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .group-content { margin-left: 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
         .group-content span { min-width: 45px; font-size: 14px; }
-
-        /* 讓第一組「底圖覆蓋」的標籤寬度適應文字長度 */
         .setting-group:first-of-type .group-content span { min-width: 120px; }
 
         input[type="color"] { border: 1px solid #ccc; width: 35px; height: 30px; cursor: pointer; background: none; padding: 0; border-radius: 4px; }
-        select { padding: 4px; border-radius: 4px; border: 1px solid #ddd; width: 100px; } /* 縮短選單寬度 */
+        select { padding: 4px; border-radius: 4px; border: 1px solid #ddd; width: 100px; }
         hr { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
 
-        /* 畫布與預覽區域 */
-        .canvas-container { position: relative; border: 2px solid #444; background: #666; overflow: auto; min-height: 600px; }
-        canvas { display: block; margin: 0 auto; cursor: crosshair; }
+        .canvas-container { position: relative; border: 2px solid #444; background: #666; overflow: auto; max-height: 95vh; border-radius: 4px; }
+        canvas { display: block; margin: 0 auto; cursor: crosshair; max-width: 100%; height: auto; }
+
         .btn-main { width: 100%; padding: 15px; background: #000; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
         .btn-download { width: 100%; padding: 15px; background: var(--green); color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; display: none; }
+
         #previewArea { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
         .preview-item { text-align: center; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .preview-item img { width: 100%; border: 1px solid #ddd; cursor: zoom-in; }
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; cursor: zoom-out; }
         #modal img { max-width: 95%; max-height: 95%; }
-
-        /* 當螢幕寬度小於 900px 時 */
-        @media (max-width: 900px) {
-            .layout {
-                /* 取消左右並排，改為垂直排列 */
-                grid-template-columns: 1fr;
-            }
-
-            .panel {
-                /* 讓面板排在上方，畫布排在下方 */
-                width: 100%;
-            }
-
-            .canvas-container {
-                /* 確保畫布容器在手機上也有足夠高度 */
-                min-height: 400px;
-                width: 100%;
-            }
-
-            .container {
-                padding: 10px; /* 手機版邊距縮小一點 */
-            }
-
-            /* 讓畫布可以左右滾動，避免大圖撐破手機寬度 */
-            canvas {
-                max-width: none;
-            }
-        }
     </style>
 </head>
 <body>
@@ -114,8 +65,7 @@
         <div class="panel">
             <div class="card">
                 <button class="guide-btn" onclick="document.getElementById('guide-dialog').showModal()">📖 說明 📖</button>
-
-                <dialog id="guide-dialog" style="width: 450px; border-radius: 8px; border: 1px solid #ccc; padding: 20px;">
+                <dialog id="guide-dialog" style="width: 90%; max-width: 400px; border-radius: 8px; border: 1px solid #ccc; padding: 50px;">
                     <h3 style="margin-top: 0;">⚠️ 注意</h3>
                     <div style="line-height: 1.8; text-align: left;">
                         1. 目前只支援 CODE-128。<br>
@@ -129,7 +79,7 @@
                         4. 樣式調整：可修改顏色與文字對齊方式。<br>
                         5. 產出：預覽滿意後即可下載 ZIP。
                     </div>
-                    <button onclick="this.closest('dialog').close()" style="float: right; margin-top: 10px;">關閉</button>
+                    <button onclick="this.closest('dialog').close()" style="float: right; margin-top: 10px; padding: 5px 15px;">關閉</button>
                 </dialog>
 
                 <label><b>1. 輸入資料 (序號,自定義文字)</b></label>
@@ -138,7 +88,7 @@
 
             <div class="card">
                 <label><b>2. 上傳底圖</b></label>
-                <input type="file" id="imageInput" accept="image/*">
+                <input type="file" id="imageInput" accept="image/*" style="width: 100%; margin-top: 10px;">
             </div>
 
             <div class="card">
@@ -153,7 +103,6 @@
 
             <div class="card">
                 <label style="font-size: 1.1em; border-bottom: 0.8px solid #333; display: block; margin-bottom: 15px;"><b>4. 樣式設定</b></label>
-
                 <div class="setting-group">
                     <span class="group-title">底圖覆蓋</span>
                     <div class="group-content">
@@ -161,15 +110,10 @@
                         <input type="color" id="bgColor" value="#ffffff">
                     </div>
                 </div>
-
                 <hr>
-
                 <div class="setting-group">
                     <span class="group-title">綠區文字</span>
-                    <div class="group-content">
-                        <span>顏色：</span>
-                        <input type="color" id="snColor" value="#000000">
-                    </div>
+                    <div class="group-content"><span>顏色：</span><input type="color" id="snColor" value="#000000"></div>
                     <div class="group-content">
                         <span>對齊：</span>
                         <select id="snAlign">
@@ -179,15 +123,10 @@
                         </select>
                     </div>
                 </div>
-
                 <hr>
-
                 <div class="setting-group">
                     <span class="group-title">藍區文字</span>
-                    <div class="group-content">
-                        <span>顏色：</span>
-                        <input type="color" id="noteColor" value="#000000">
-                    </div>
+                    <div class="group-content"><span>顏色：</span><input type="color" id="noteColor" value="#000000"></div>
                     <div class="group-content">
                         <span>對齊：</span>
                         <select id="noteAlign">
@@ -213,7 +152,6 @@
 <div style="display:none"><canvas id="renderCanvas"></canvas><svg id="barcodeSVG"></svg></div>
 
 <script>
-    // JS 部分保持你原本的邏輯
     let cvReady = false, boxes = [], baseImg = new Image(), currentMode = 'barcode';
     const canvas = document.getElementById('editorCanvas'), ctx = canvas.getContext('2d');
     let isDrawing = false, startX, startY;
@@ -235,10 +173,10 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
-            baseImg.onload = async () => {
+            baseImg.onload = () => {
                 canvas.width = baseImg.width;
                 canvas.height = baseImg.height;
-                await detectFeatures();
+                detectFeatures();
             };
             baseImg.src = ev.target.result;
         };
@@ -246,7 +184,7 @@
     };
 
     async function detectFeatures() {
-        updateStatus("🔍 正在智慧辨識區域...");
+        updateStatus("🔍 正在辨識區域...");
         boxes = [];
         let src = cv.imread(baseImg);
         let gray = new cv.Mat(), gradX = new cv.Mat(), thresh = new cv.Mat(), closed = new cv.Mat(), contours = new cv.MatVector(), hierarchy = new cv.Mat();
@@ -274,40 +212,51 @@
                 await worker.loadLanguage('eng');
                 await worker.initialize('eng');
                 const { data: { words } } = await worker.recognize(baseImg);
-                let bestMatch = null;
                 words.forEach(w => {
                     let cleanText = w.text.replace(/[^a-zA-Z0-9]/g, '');
-                    if (rawSN.includes(cleanText) && cleanText.length > rawSN.length * 0.5) bestMatch = w.bbox;
+                    if (rawSN.includes(cleanText) && cleanText.length > rawSN.length * 0.5) {
+                        boxes.push({ x: w.bbox.x0 - 5, y: w.bbox.y0 - 5, w: (w.bbox.x1 - w.bbox.x0) + 10, h: (w.bbox.y1 - w.bbox.y0) + 10, type: 'sn' });
+                    }
                 });
-                if (bestMatch) {
-                    boxes.push({ x: bestMatch.x0 - 5, y: bestMatch.y0 - 5, w: (bestMatch.x1 - bestMatch.x0) + 10, h: (bestMatch.y1 - bestMatch.y0) + 10, type: 'sn' });
-                }
                 await worker.terminate();
             } catch(e) {}
         }
         src.delete(); gray.delete(); gradX.delete(); thresh.delete(); closed.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
-        updateStatus("👌 完成上傳。");
+        updateStatus("👌 完成辨識。");
         render();
     }
 
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(baseImg, 0, 0);
+
+        // 修正點：計算視覺縮放比，確保框線粗細在螢幕上看來恆定
+        const rect = canvas.getBoundingClientRect();
+        const visualScale = canvas.width / rect.width;
+
         boxes.forEach(b => {
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3 * visualScale; // 視覺上約 3px 粗
             ctx.strokeStyle = b.type === 'barcode' ? '#ff4d4f' : (b.type === 'sn' ? '#52c41a' : '#1890ff');
             ctx.strokeRect(b.x, b.y, b.w, b.h);
         });
     }
 
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top) * scaleY
+        };
+    }
+
     canvas.onmousedown = (e) => {
-        const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
-        startX = (e.clientX - rect.left) * scale;
-        startY = (e.clientY - rect.top) * scale;
+        const pos = getMousePos(e);
+        startX = pos.x; startY = pos.y;
         if (e.button === 2) {
             boxes = boxes.filter(b => !(startX >= b.x && startX <= b.x+b.w && startY >= b.y && startY <= b.y+b.h));
-            render();
-            return;
+            render(); return;
         }
         isDrawing = true;
     };
@@ -315,19 +264,22 @@
     canvas.onmousemove = (e) => {
         if (!isDrawing) return;
         render();
-        const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
+        const pos = getMousePos(e);
+        const rect = canvas.getBoundingClientRect();
+        const visualScale = canvas.width / rect.width;
+
         ctx.strokeStyle = currentMode === 'barcode' ? '#ff4d4f' : (currentMode === 'sn' ? '#52c41a' : '#1890ff');
-        ctx.setLineDash([5, 5]);
-        ctx.strokeRect(startX, startY, ((e.clientX - rect.left) * scale) - startX, ((e.clientY - rect.top) * scale) - startY);
+        ctx.lineWidth = 2 * visualScale;
+        ctx.setLineDash([5 * visualScale, 5 * visualScale]); // 虛線也隨比例調整
+        ctx.strokeRect(startX, startY, pos.x - startX, pos.y - startY);
         ctx.setLineDash([]);
     };
 
     canvas.onmouseup = (e) => {
         if (!isDrawing) return;
-        const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
-        let endX = (e.clientX - rect.left) * scale, endY = (e.clientY - rect.top) * scale;
-        let w = Math.abs(endX - startX), h = Math.abs(endY - startY);
-        if (w > 5 && h > 5) boxes.push({ x: Math.min(startX, endX), y: Math.min(startY, endY), w, h, type: currentMode });
+        const pos = getMousePos(e);
+        let w = Math.abs(pos.x - startX), h = Math.abs(pos.y - startY);
+        if (w > 5 && h > 5) boxes.push({ x: Math.min(startX, pos.x), y: Math.min(startY, pos.y), w, h, type: currentMode });
         isDrawing = false;
         render();
     };
@@ -335,7 +287,7 @@
 
     document.getElementById('processBtn').onclick = async () => {
         const data = document.getElementById('dataInput').value.trim();
-        if (!data) return;
+        if (!data) return alert("請輸入序號");
         updateStatus("🚀 產出預覽中...");
         const lines = data.split('\n'), zip = new JSZip();
         const rCanvas = document.getElementById('renderCanvas'), rCtx = rCanvas.getContext('2d');
@@ -358,7 +310,7 @@
             div.innerHTML = `<img src="${url}" onclick="showModal('${url}')"><br><small>${sn}</small>`;
             preview.appendChild(div);
         }
-        updateStatus("✅ 修改完成。");
+        updateStatus("✅ 修改完成，請置下方查看預覽效果。");
         document.getElementById('downloadBtn').style.display = "block";
         document.getElementById('downloadBtn').onclick = async () => {
             const content = await zip.generateAsync({type:"blob"});
@@ -387,5 +339,4 @@
     }
 </script>
 </body>
-
 </html>
