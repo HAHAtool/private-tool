@@ -15,48 +15,94 @@
         :root { --red: #ff4d4f; --green: #52c41a; --blue: #1890ff; --bg: #f0f2f5; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
         .container { max-width: 1300px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        .layout { display: grid; grid-template-columns: 400px 1fr; gap: 20px; }
 
         /* 頂部狀態顯示列 */
         .status-bar { background: #e6f7ff; border: 1px solid #91d5ff; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; }
 
         .panel { display: flex; flex-direction: column; gap: 15px; }
-        .card { border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; position: relative; }
+
+        /* 卡片容器：修正寬度為 100% 以填滿 400px 的 panel */
+        .card {
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 8px;
+            background: #fafafa;
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
         /* 使用說明按鈕 */
         .guide-btn { position: absolute; top: 10px; right: 10px; background: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
 
-        textarea { width: 100%; height: 100px; border: 1px solid #ddd; padding: 8px; box-sizing: border-box; }
+        /* 文字輸入框：增加高度以符合多行 placeholder */
+        textarea { width: 100%; height: 120px; border: 1px solid #ddd; padding: 8px; box-sizing: border-box; line-height: 1.5; }
 
-        /* 繪製模式切換按鈕 (紅、綠、藍三種屬性) */
+        /* 繪製模式按鈕 */
         .mode-selector { display: flex; gap: 5px; margin-bottom: 10px; }
         .mode-btn { flex: 1; padding: 8px; border: 2px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 13px; }
         .mode-btn.active[data-type="barcode"] { background: var(--red); color: white; border-color: var(--red); }
         .mode-btn.active[data-type="sn"] { background: var(--green); color: white; border-color: var(--green); }
         .mode-btn.active[data-type="note"] { background: var(--blue); color: white; border-color: var(--blue); }
 
-        /* 畫布編輯區域設定 */
+        /* 樣式設定區域優化 */
+        .setting-group { margin-bottom: 15px; }
+        .group-title { font-weight: bold; display: block; margin-bottom: 8px; color: #333; }
+        .group-content {
+            margin-left: 20px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .group-content span { min-width: 45px; font-size: 14px; }
+
+        /* 讓第一組「底圖覆蓋」的標籤寬度適應文字長度 */
+        .setting-group:first-of-type .group-content span { min-width: 120px; }
+
+        input[type="color"] { border: 1px solid #ccc; width: 35px; height: 30px; cursor: pointer; background: none; padding: 0; border-radius: 4px; }
+        select { padding: 4px; border-radius: 4px; border: 1px solid #ddd; width: 100px; } /* 縮短選單寬度 */
+        hr { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
+
+        /* 畫布與預覽區域 */
         .canvas-container { position: relative; border: 2px solid #444; background: #666; overflow: auto; min-height: 600px; }
         canvas { display: block; margin: 0 auto; cursor: crosshair; }
-
-        /* 動作按鈕樣式 */
         .btn-main { width: 100%; padding: 15px; background: #000; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; font-weight: bold; }
         .btn-download { width: 100%; padding: 15px; background: var(--green); color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 10px; display: none; }
-
-        /* 下方產出的預覽小圖清單 */
         #previewArea { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 20px; border-top: 2px solid #eee; padding-top: 20px; }
         .preview-item { text-align: center; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .preview-item img { width: 100%; border: 1px solid #ddd; cursor: zoom-in; }
-
-        /* 燈箱視窗 (放大顯示預覽圖) */
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; cursor: zoom-out; }
         #modal img { max-width: 95%; max-height: 95%; }
 
-        /* 樣式選單網格佈局 */
-        .setting-grid { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; font-size: 14px; }
-        input[type="color"] { border: none; width: 30px; height: 30px; cursor: pointer; background: none; }
-        select { padding: 4px; border-radius: 4px; border: 1px solid #ddd; width: 100%; }
-        hr { grid-column: span 2; width: 100%; border: 0; border-top: 1px solid #ddd; margin: 5px 0; }
+        /* 當螢幕寬度小於 900px 時 */
+        @media (max-width: 900px) {
+            .layout {
+                /* 取消左右並排，改為垂直排列 */
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                /* 讓面板排在上方，畫布排在下方 */
+                width: 100%;
+            }
+
+            .canvas-container {
+                /* 確保畫布容器在手機上也有足夠高度 */
+                min-height: 400px;
+                width: 100%;
+            }
+
+            .container {
+                padding: 10px; /* 手機版邊距縮小一點 */
+            }
+
+            /* 讓畫布可以左右滾動，避免大圖撐破手機寬度 */
+            canvas {
+                max-width: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -70,27 +116,24 @@
                 <button class="guide-btn" onclick="document.getElementById('guide-dialog').showModal()">📖 說明 📖</button>
 
                 <dialog id="guide-dialog" style="width: 450px; border-radius: 8px; border: 1px solid #ccc; padding: 20px;">
-                  <h3 style="margin-top: 0;">⚠️ 注意</h3>
-                      <div style="line-height: 2.0; text-align: left;">
-                        1. 目前只支援 CODE-128 。<br>
-                        2. 所有處理均在瀏覽器記憶體完成，不會上傳資料。
-                      </div>
-                  <br>
-                  <h3 style="margin-top: 0;">📖 使用說明</h3>
-                      <div style="line-height: 2.0; text-align: left;">
-                        1. 序號定位： 資料第一行請填寫圖片上現有的 PIN 碼或序號。<br>
-                        2. 自動偵測： 上傳圖片，系統會自動標註紅框與綠框。<br>
-                        3. 修改/新增：左鍵畫框（新增）、右鍵點框（刪除）。<br>
-                        4. 文字大小： 高度自動跟隨框框，寬度允許超出。<br>
-                        5. 樣式調整： 可修改文字色彩，並切換對齊方式。<br>
-                        6. 下載： 預覽滿意後再下載打包ZIP。
-                      </div>
-                  <br>
-                  <button onclick="this.closest('dialog').close()" style="float: right;">關閉</button>
+                    <h3 style="margin-top: 0;">⚠️ 注意</h3>
+                    <div style="line-height: 1.8; text-align: left;">
+                        1. 目前只支援 CODE-128。<br>
+                        2. 所有處理均在瀏覽器完成，不會上傳資料。
+                    </div>
+                    <h3 style="margin-top: 15px;">📖 使用說明</h3>
+                    <div style="line-height: 1.8; text-align: left;">
+                        1. 序號定位：資料第一行填寫圖上現有內容。<br>
+                        2. 自動偵測：上傳圖片會自動標註紅框與綠框。<br>
+                        3. 修改/新增：左鍵畫框、右鍵點框刪除。<br>
+                        4. 樣式調整：可修改顏色與文字對齊方式。<br>
+                        5. 產出：預覽滿意後即可下載 ZIP。
+                    </div>
+                    <button onclick="this.closest('dialog').close()" style="float: right; margin-top: 10px;">關閉</button>
                 </dialog>
 
                 <label><b>1. 輸入資料 (序號,自定義文字)</b></label>
-                <textarea id="dataInput" placeholder="第一行需輸入圖上現有的序號以便定位"></textarea>
+                <textarea id="dataInput" placeholder="⚠️第一行請輸入圖上現有的序號以便定位&#10;例如:&#10;SN123456789,使用期限:2025/01/31~2026/01/31&#10;SN987654321,使用期限:2025/01/31~2026/01/31"></textarea>
             </div>
 
             <div class="card">
@@ -109,25 +152,50 @@
             </div>
 
             <div class="card">
-                <label><b>4. 樣式設定</b></label>
-                <div class="setting-grid">
-                    <span>底圖覆蓋色：</span><input type="color" id="bgColor" value="#ffffff">
-                    <hr>
-                    <span>綠區文字色：</span><input type="color" id="snColor" value="#000000">
-                    <span>綠區對齊：</span>
-                    <select id="snAlign">
-                        <option value="center">置中</option>
-                        <option value="left">靠左</option>
-                        <option value="right">靠右</option>
-                    </select>
-                    <hr>
-                    <span>藍區文字色：</span><input type="color" id="noteColor" value="#000000">
-                    <span>藍區對齊：</span>
-                    <select id="noteAlign">
-                        <option value="center" selected>置中</option>
-                        <option value="left">靠左</option>
-                        <option value="right">靠右</option>
-                    </select>
+                <label style="font-size: 1.1em; border-bottom: 2px solid #333; display: block; margin-bottom: 15px;"><b>4. 樣式設定</b></label>
+
+                <div class="setting-group">
+                    <span class="group-title">底圖覆蓋</span>
+                    <div class="group-content">
+                        <span>條碼與文字底色：</span>
+                        <input type="color" id="bgColor" value="#ffffff">
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="setting-group">
+                    <span class="group-title">綠區文字</span>
+                    <div class="group-content">
+                        <span>顏色：</span>
+                        <input type="color" id="snColor" value="#000000">
+                    </div>
+                    <div class="group-content">
+                        <span>對齊：</span>
+                        <select id="snAlign">
+                            <option value="center">置中</option>
+                            <option value="left">靠左</option>
+                            <option value="right">靠右</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="setting-group">
+                    <span class="group-title">藍區文字</span>
+                    <div class="group-content">
+                        <span>顏色：</span>
+                        <input type="color" id="noteColor" value="#000000">
+                    </div>
+                    <div class="group-content">
+                        <span>對齊：</span>
+                        <select id="noteAlign">
+                            <option value="center" selected>置中</option>
+                            <option value="left">靠左</option>
+                            <option value="right">靠右</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -142,30 +210,26 @@
 </div>
 
 <div id="modal" onclick="this.style.display='none'"><img id="modalImg" src=""></div>
-
 <div style="display:none"><canvas id="renderCanvas"></canvas><svg id="barcodeSVG"></svg></div>
 
 <script>
-    // --- 全域變數初始化 ---
+    // JS 部分保持你原本的邏輯
     let cvReady = false, boxes = [], baseImg = new Image(), currentMode = 'barcode';
     const canvas = document.getElementById('editorCanvas'), ctx = canvas.getContext('2d');
     let isDrawing = false, startX, startY;
 
-    // --- 引擎載入回呼函數 ---
     function onOpenCvReady() { cvReady = true; updateStatus("✅ 引擎就緒，請上傳圖片。"); }
     function updateStatus(m) { document.getElementById('status').innerText = m; }
     function showModal(src) { document.getElementById('modalImg').src = src; document.getElementById('modal').style.display = 'flex'; }
 
-    // --- 模式切換按鈕事件處理 ---
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentMode = btn.dataset.type; // 更新當前繪圖類別 (紅/綠/藍)
+            currentMode = btn.dataset.type;
         };
     });
 
-    // --- 圖片上傳後的邏輯處理 ---
     document.getElementById('imageInput').onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -174,137 +238,88 @@
             baseImg.onload = async () => {
                 canvas.width = baseImg.width;
                 canvas.height = baseImg.height;
-                await detectFeatures(); // 啟動自動辨識模組
+                await detectFeatures();
             };
             baseImg.src = ev.target.result;
         };
         reader.readAsDataURL(file);
     };
 
-    /**
-     * 核心偵測模組：利用 OpenCV 偵測條碼特徵，並用 Tesseract OCR 定位序號文字座標
-     */
     async function detectFeatures() {
         updateStatus("🔍 正在智慧辨識區域...");
         boxes = [];
         let src = cv.imread(baseImg);
         let gray = new cv.Mat(), gradX = new cv.Mat(), thresh = new cv.Mat(), closed = new cv.Mat(), contours = new cv.MatVector(), hierarchy = new cv.Mat();
-
-        // 1. 偵測紅區 (條碼)：利用 Sobel 偵測垂直線條頻率，結合形態學焊接
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
         cv.Sobel(gray, gradX, cv.CV_8U, 1, 0, 3);
         cv.threshold(gradX, thresh, 100, 255, cv.THRESH_BINARY);
-
         let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(40, 1));
         cv.morphologyEx(thresh, closed, cv.MORPH_CLOSE, kernel);
         cv.findContours(closed, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-        let bcRect = null, bcCandidates = [];
+        let bcCandidates = [];
         for (let i = 0; i < contours.size(); ++i) {
             let rect = cv.boundingRect(contours.get(i));
-            // 篩選出長寬比符合條碼特徵的矩形 (大於 2.5 倍)
             if (rect.width > 100 && (rect.width / rect.height) > 2.5) bcCandidates.push(rect);
         }
-
         if (bcCandidates.length > 0) {
-            // 排序取得面積最大的候選區域
             bcCandidates.sort((a, b) => (b.width * b.height) - (a.width * a.height));
-            bcRect = bcCandidates[0];
-            // 稍微外擴座標，確保條碼產生時能完全蓋掉舊有圖像
+            let bcRect = bcCandidates[0];
             let pW = bcRect.width * 0.02, pH = bcRect.height * 0.015;
             boxes.push({ x: Math.max(0, bcRect.x - pW), y: Math.max(0, bcRect.y - pH), w: bcRect.width + pW * 2, h: bcRect.height + pH * 2, type: 'barcode' });
         }
-
-        // 2. 定位綠區 (序號)：根據輸入的第一行內容，在圖中精準比對座標
         const rawSN = document.getElementById('dataInput').value.split('\n')[0].split(',')[0].trim();
         if (rawSN) {
-            updateStatus(`🔤 比對第一行序號: "${rawSN}"...`);
             try {
                 const worker = await Tesseract.createWorker();
                 await worker.loadLanguage('eng');
                 await worker.initialize('eng');
                 const { data: { words } } = await worker.recognize(baseImg);
-
                 let bestMatch = null;
                 words.forEach(w => {
-                    // 清理非字元符號進行模糊比對
                     let cleanText = w.text.replace(/[^a-zA-Z0-9]/g, '');
                     if (rawSN.includes(cleanText) && cleanText.length > rawSN.length * 0.5) bestMatch = w.bbox;
                 });
-
                 if (bestMatch) {
-                    let snBox = { x: bestMatch.x0 - 5, y: bestMatch.y0 - 5, w: (bestMatch.x1 - bestMatch.x0) + 10, h: (bestMatch.y1 - bestMatch.y0) + 10, type: 'sn' };
-                    // 檢查辨識出的序號是否跟條碼區重疊，避開誤判
-                    let barcodeBox = boxes.find(b => b.type === 'barcode');
-                    if (!barcodeBox || !(snBox.x < barcodeBox.x + barcodeBox.w && snBox.x + snBox.w > barcodeBox.x && snBox.y < barcodeBox.y + barcodeBox.h && snBox.y + snBox.h > barcodeBox.y)) {
-                        boxes.push(snBox);
-                    }
+                    boxes.push({ x: bestMatch.x0 - 5, y: bestMatch.y0 - 5, w: (bestMatch.x1 - bestMatch.x0) + 10, h: (bestMatch.y1 - bestMatch.y0) + 10, type: 'sn' });
                 }
                 await worker.terminate();
             } catch(e) {}
         }
-
-        // 釋放記憶體，避免瀏覽器崩潰
         src.delete(); gray.delete(); gradX.delete(); thresh.delete(); closed.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
         updateStatus("👌 完成上傳。");
-        render(); // 繪製到畫布上供檢視
+        render();
     }
 
-    /**
-     * 渲染畫布，將圖片與偵測出的各類色塊框繪製出來
-     */
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(baseImg, 0, 0);
         boxes.forEach(b => {
             ctx.lineWidth = 4;
-            // 依種類決定顯示顏色：紅(條碼)、綠(序號)、藍(自定義)
             ctx.strokeStyle = b.type === 'barcode' ? '#ff4d4f' : (b.type === 'sn' ? '#52c41a' : '#1890ff');
             ctx.strokeRect(b.x, b.y, b.w, b.h);
         });
     }
 
-    // --- 畫布滑鼠點擊與繪圖事件 (手動微調功能) ---
     canvas.onmousedown = (e) => {
         const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
         startX = (e.clientX - rect.left) * scale;
         startY = (e.clientY - rect.top) * scale;
-
-        // 滑鼠右鍵點擊：刪除該位置的現有框框
         if (e.button === 2) {
             boxes = boxes.filter(b => !(startX >= b.x && startX <= b.x+b.w && startY >= b.y && startY <= b.y+b.h));
             render();
             return;
         }
-        isDrawing = true; // 準備繪製新框
+        isDrawing = true;
     };
 
     canvas.onmousemove = (e) => {
         if (!isDrawing) return;
-        render(); // 繪圖中需不斷重繪
+        render();
         const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
-
-        // --- 新增：根據當前模式 (currentMode) 固定虛線顏色 ---
-        if (currentMode === 'barcode') {
-            ctx.strokeStyle = '#ff4d4f'; // 紅色
-        } else if (currentMode === 'sn') {
-            ctx.strokeStyle = '#52c41a'; // 綠色
-        } else if (currentMode === 'note') {
-            ctx.strokeStyle = '#1890ff'; // 藍色
-        }
-
-        ctx.lineWidth = 3;        // 設定虛線寬度（可依需求調整）
-        ctx.setLineDash([5, 5]);  // 使用虛線提示繪圖軌跡
-
-        // 繪製矩形
-        ctx.strokeRect(
-            startX,
-            startY,
-            ((e.clientX - rect.left) * scale) - startX,
-            ((e.clientY - rect.top) * scale) - startY
-        );
-
-        ctx.setLineDash([]);      // 繪製完畢後重設為實線，避免影響後續渲染
+        ctx.strokeStyle = currentMode === 'barcode' ? '#ff4d4f' : (currentMode === 'sn' ? '#52c41a' : '#1890ff');
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(startX, startY, ((e.clientX - rect.left) * scale) - startX, ((e.clientY - rect.top) * scale) - startY);
+        ctx.setLineDash([]);
     };
 
     canvas.onmouseup = (e) => {
@@ -312,61 +327,38 @@
         const rect = canvas.getBoundingClientRect(), scale = canvas.width / rect.width;
         let endX = (e.clientX - rect.left) * scale, endY = (e.clientY - rect.top) * scale;
         let w = Math.abs(endX - startX), h = Math.abs(endY - startY);
-        // 確保框框有一定寬高再存入
         if (w > 5 && h > 5) boxes.push({ x: Math.min(startX, endX), y: Math.min(startY, endY), w, h, type: currentMode });
         isDrawing = false;
         render();
     };
-    canvas.oncontextmenu = (e) => e.preventDefault(); // 禁止瀏覽器選單
+    canvas.oncontextmenu = (e) => e.preventDefault();
 
-    // --- 產生最終圖檔的邏輯 ---
     document.getElementById('processBtn').onclick = async () => {
         const data = document.getElementById('dataInput').value.trim();
-        if (!data) return alert("請輸入序號");
+        if (!data) return;
         updateStatus("🚀 產出預覽中...");
-
         const lines = data.split('\n'), zip = new JSZip();
         const rCanvas = document.getElementById('renderCanvas'), rCtx = rCanvas.getContext('2d');
         rCanvas.width = baseImg.width; rCanvas.height = baseImg.height;
         const preview = document.getElementById('previewArea'); preview.innerHTML = "";
 
-        // 獲取設定面板中的對齊模式
-        const snAlignMode = document.getElementById('snAlign').value;
-        const noteAlignMode = document.getElementById('noteAlign').value;
-
-        // 循環每一行輸入資料，產出對應圖檔
         for (let i = 0; i < lines.length; i++) {
             const [sn, note] = lines[i].split(',').map(s => s.trim());
-            rCtx.drawImage(baseImg, 0, 0); // 先貼底圖
-
+            rCtx.drawImage(baseImg, 0, 0);
             for (let b of boxes) {
-                // 第一步：用底色覆蓋原有的圖像
                 rCtx.fillStyle = document.getElementById('bgColor').value;
                 rCtx.fillRect(b.x, b.y, b.w, b.h);
-
-                // 第二步：渲染內容
-                if (b.type === 'barcode') {
-                    await drawBarcode(rCtx, sn, b);
-                } else if (b.type === 'sn') {
-                    // 使用綠區文字顏色與對齊設定
-                    drawText(rCtx, sn, b, document.getElementById('snColor').value, snAlignMode);
-                } else if (b.type === 'note') {
-                    // 使用藍區文字顏色與對齊設定
-                    drawText(rCtx, note || "", b, document.getElementById('noteColor').value, noteAlignMode);
-                }
+                if (b.type === 'barcode') await drawBarcode(rCtx, sn, b);
+                else if (b.type === 'sn') drawText(rCtx, sn, b, document.getElementById('snColor').value, document.getElementById('snAlign').value);
+                else if (b.type === 'note') drawText(rCtx, note || "", b, document.getElementById('noteColor').value, document.getElementById('noteAlign').value);
             }
-
-            // 存為檔案並展示
             const blob = await new Promise(res => rCanvas.toBlob(res, 'image/png')), url = URL.createObjectURL(blob);
             zip.file(`ticket_${i+1}.png`, blob);
-
-            const div = document.createElement('div');
-            div.className = "preview-item";
+            const div = document.createElement('div'); div.className = "preview-item";
             div.innerHTML = `<img src="${url}" onclick="showModal('${url}')"><br><small>${sn}</small>`;
             preview.appendChild(div);
         }
-
-        updateStatus("✅ 修改完成，請確認預覽效果。 ✅");
+        updateStatus("✅ 修改完成。");
         document.getElementById('downloadBtn').style.display = "block";
         document.getElementById('downloadBtn').onclick = async () => {
             const content = await zip.generateAsync({type:"blob"});
@@ -374,9 +366,6 @@
         };
     };
 
-    /**
-     * 繪製條碼：呼叫 JsBarcode 生成內容並繪製於指定區塊
-     */
     function drawBarcode(tCtx, text, box) {
         return new Promise(res => {
             const svg = document.getElementById('barcodeSVG');
@@ -387,28 +376,14 @@
         });
     }
 
-    /**
-     * 繪製文字 (高度優先邏輯)：
-     * 字體大小固定跟隨標註框的高度 (80%)，水平寬度則依據對齊設定定位且不縮放寬度
-     */
     function drawText(tCtx, text, box, color, align) {
         tCtx.fillStyle = color;
         tCtx.textBaseline = "middle";
-
-        // 設定字體大小與框框高度成正比
         let fontSize = box.h * 0.8;
         tCtx.font = `bold ${fontSize}px sans-serif`;
-
-        if (align === 'center') {
-            tCtx.textAlign = "center";
-            tCtx.fillText(text, box.x + box.w/2, box.y + box.h/2);
-        } else if (align === 'left') {
-            tCtx.textAlign = "left";
-            tCtx.fillText(text, box.x + 5, box.y + box.h/2); // 預留 5 像素左間距
-        } else if (align === 'right') {
-            tCtx.textAlign = "right";
-            tCtx.fillText(text, box.x + box.w - 5, box.y + box.h/2); // 預留 5 像素右間距
-        }
+        if (align === 'center') { tCtx.textAlign = "center"; tCtx.fillText(text, box.x + box.w/2, box.y + box.h/2); }
+        else if (align === 'left') { tCtx.textAlign = "left"; tCtx.fillText(text, box.x + 5, box.y + box.h/2); }
+        else if (align === 'right') { tCtx.textAlign = "right"; tCtx.fillText(text, box.x + box.w - 5, box.y + box.h/2); }
     }
 </script>
 </body>
