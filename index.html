@@ -11,28 +11,31 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 
     <style>
+        /* 樣式定義：使用 CSS 變數管理顏色，確保風格統一 */
         :root { --red: #ff4d4f; --green: #52c41a; --blue: #1890ff; --bg: #f0f2f5; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 10px; }
         .container { max-width: 1300px; margin: 0 auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
 
+        /* 響應式佈局：當螢幕寬度小於 900px 時改為單欄顯示 */
         .layout { display: grid; grid-template-columns: 400px 1fr; gap: 20px; }
-        @media (max-width: 900px) {
-            .layout { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
         .status-bar { background: #e6f7ff; border: 1px solid #91d5ff; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; font-weight: bold; }
         .panel { display: flex; flex-direction: column; gap: 15px; }
         .card { border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; position: relative; width: 100%; box-sizing: border-box; }
 
+        /* 操作說明對話框按鈕 */
         .guide-btn { position: absolute; top: 10px; right: 10px; background: #6c757d; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
         textarea { width: 100%; height: 120px; border: 1px solid #ddd; padding: 8px; box-sizing: border-box; line-height: 1.5; font-size: 14px; }
 
+        /* 繪製模式切換器樣式 */
         .mode-selector { display: flex; gap: 5px; margin-bottom: 10px; }
         .mode-btn { flex: 1; padding: 8px; border: 2px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 13px; }
         .mode-btn.active[data-type="barcode"] { background: var(--red); color: white; border-color: var(--red); }
         .mode-btn.active[data-type="sn"] { background: var(--green); color: white; border-color: var(--green); }
         .mode-btn.active[data-type="note"] { background: var(--blue); color: white; border-color: var(--blue); }
 
+        /* 樣式設定區塊內部配置 */
         .setting-group { margin-bottom: 15px; }
         .group-title { font-weight: bold; display: block; margin-bottom: 8px; color: #333; }
         .group-content { margin-left: 20px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
@@ -43,6 +46,7 @@
         select { padding: 4px; border-radius: 4px; border: 1px solid #ddd; width: 100px; }
         hr { border: 0; border-top: 1px solid #eee; margin: 10px 0; }
 
+        /* 畫布容器：負責管理大圖顯示與手動框選 */
         .canvas-container { position: relative; border: 2px solid #444; background: #666; overflow: auto; max-height: 95vh; border-radius: 4px; }
         canvas { display: block; margin: 0 auto; cursor: crosshair; max-width: 100%; height: auto; }
 
@@ -73,11 +77,12 @@
                     </div>
                     <h3 style="margin-top: 15px;">📖 使用說明</h3>
                     <div style="line-height: 1.8; text-align: left;">
-                        1. 序號定位：資料第一行填寫圖上現有內容。<br>
-                        2. 自動偵測：上傳圖片會自動標註紅框與綠框。<br>
-                        3. 修改/新增：左鍵畫框、右鍵點框刪除。<br>
-                        4. 樣式調整：可修改顏色與文字對齊方式。<br>
-                        5. 產出：預覽滿意後即可下載 ZIP。
+                        1. 序號定位：資料第一行請填寫圖片上現有序號。<br>
+                        2. 自動偵測：上傳圖片，系統會自動標註紅框(條碼)與綠框(序號)。<br>
+                        3. 修改/新增：左鍵畫框（新增）、右鍵點框（刪除）。<br>
+                        4. 文字大小： 高度自動跟隨框框，寬度允許超出。<br>
+                        5. 樣式調整： 可修改文字色彩，並切換對齊方式。<br>
+                        6. 下載： 預覽滿意後即可下載ZIP。
                     </div>
                     <button onclick="this.closest('dialog').close()" style="float: right; margin-top: 10px; padding: 5px 15px;">關閉</button>
                 </dialog>
@@ -152,14 +157,21 @@
 <div style="display:none"><canvas id="renderCanvas"></canvas><svg id="barcodeSVG"></svg></div>
 
 <script>
+    /**
+     * 變數初始化
+     * boxes: 儲存所有標註區塊座標與類型
+     * baseImg: 原始上傳圖片物件
+     */
     let cvReady = false, boxes = [], baseImg = new Image(), currentMode = 'barcode';
     const canvas = document.getElementById('editorCanvas'), ctx = canvas.getContext('2d');
     let isDrawing = false, startX, startY;
 
+    // OpenCV 載入完成通知
     function onOpenCvReady() { cvReady = true; updateStatus("✅ 引擎就緒，請上傳圖片。"); }
     function updateStatus(m) { document.getElementById('status').innerText = m; }
     function showModal(src) { document.getElementById('modalImg').src = src; document.getElementById('modal').style.display = 'flex'; }
 
+    // 切換紅、綠、藍繪圖模式
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -168,6 +180,7 @@
         };
     });
 
+    // 處理圖片讀取邏輯
     document.getElementById('imageInput').onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -176,35 +189,46 @@
             baseImg.onload = () => {
                 canvas.width = baseImg.width;
                 canvas.height = baseImg.height;
-                detectFeatures();
+                detectFeatures(); // 啟動自動辨識
             };
             baseImg.src = ev.target.result;
         };
         reader.readAsDataURL(file);
     };
 
+    /**
+     * AI 辨識模組：利用 OpenCV 找尋垂直條碼特徵，利用 Tesseract OCR 定位序號
+     */
     async function detectFeatures() {
         updateStatus("🔍 正在辨識區域...");
         boxes = [];
         let src = cv.imread(baseImg);
         let gray = new cv.Mat(), gradX = new cv.Mat(), thresh = new cv.Mat(), closed = new cv.Mat(), contours = new cv.MatVector(), hierarchy = new cv.Mat();
+
+        // 1. 偵測紅區 (條碼)：利用影像 Sobel 算子尋找高頻垂直線條
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
         cv.Sobel(gray, gradX, cv.CV_8U, 1, 0, 3);
         cv.threshold(gradX, thresh, 100, 255, cv.THRESH_BINARY);
         let kernel = cv.getStructuringElement(cv.MORPH_RECT, new cv.Size(40, 1));
         cv.morphologyEx(thresh, closed, cv.MORPH_CLOSE, kernel);
         cv.findContours(closed, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
         let bcCandidates = [];
         for (let i = 0; i < contours.size(); ++i) {
             let rect = cv.boundingRect(contours.get(i));
+            // 篩選出長方形比例正確的條碼候選區
             if (rect.width > 100 && (rect.width / rect.height) > 2.5) bcCandidates.push(rect);
         }
+
         if (bcCandidates.length > 0) {
             bcCandidates.sort((a, b) => (b.width * b.height) - (a.width * a.height));
             let bcRect = bcCandidates[0];
+            // 座標外擴 2% 左右，確保產出時能完美蓋掉舊圖
             let pW = bcRect.width * 0.02, pH = bcRect.height * 0.015;
             boxes.push({ x: Math.max(0, bcRect.x - pW), y: Math.max(0, bcRect.y - pH), w: bcRect.width + pW * 2, h: bcRect.height + pH * 2, type: 'barcode' });
         }
+
+        // 2. 定位綠區 (序號)：比對圖中文字，精準抓取座標
         const rawSN = document.getElementById('dataInput').value.split('\n')[0].split(',')[0].trim();
         if (rawSN) {
             try {
@@ -214,6 +238,7 @@
                 const { data: { words } } = await worker.recognize(baseImg);
                 words.forEach(w => {
                     let cleanText = w.text.replace(/[^a-zA-Z0-9]/g, '');
+                    // 模糊匹配：內容包含且長度過半即判定為目標
                     if (rawSN.includes(cleanText) && cleanText.length > rawSN.length * 0.5) {
                         boxes.push({ x: w.bbox.x0 - 5, y: w.bbox.y0 - 5, w: (w.bbox.x1 - w.bbox.x0) + 10, h: (w.bbox.y1 - w.bbox.y0) + 10, type: 'sn' });
                     }
@@ -221,39 +246,45 @@
                 await worker.terminate();
             } catch(e) {}
         }
+
+        // 記憶體清理：OpenCV 的 Mat 物件必須手動刪除以免溢出
         src.delete(); gray.delete(); gradX.delete(); thresh.delete(); closed.delete(); contours.delete(); hierarchy.delete(); kernel.delete();
         updateStatus("👌 完成辨識。");
         render();
     }
 
+    /**
+     * 更新渲染：繪製底圖與標註框線
+     */
     function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(baseImg, 0, 0);
 
-        // 修正點：計算視覺縮放比，確保框線粗細在螢幕上看來恆定
+        // 計算縮放比例，確保螢幕上的框線粗細看起來一致
         const rect = canvas.getBoundingClientRect();
         const visualScale = canvas.width / rect.width;
 
         boxes.forEach(b => {
-            ctx.lineWidth = 3 * visualScale; // 視覺上約 3px 粗
+            ctx.lineWidth = 3 * visualScale;
             ctx.strokeStyle = b.type === 'barcode' ? '#ff4d4f' : (b.type === 'sn' ? '#52c41a' : '#1890ff');
             ctx.strokeRect(b.x, b.y, b.w, b.h);
         });
     }
 
+    // 計算滑鼠在畫布上的正確座標（排除縮放干擾）
     function getMousePos(e) {
         const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
         return {
-            x: (e.clientX - rect.left) * scaleX,
-            y: (e.clientY - rect.top) * scaleY
+            x: (e.clientX - rect.left) * (canvas.width / rect.width),
+            y: (e.clientY - rect.top) * (canvas.height / rect.height)
         };
     }
 
+    // 手動標註邏輯
     canvas.onmousedown = (e) => {
         const pos = getMousePos(e);
         startX = pos.x; startY = pos.y;
+        // 右鍵點擊：刪除該位置的現有框框
         if (e.button === 2) {
             boxes = boxes.filter(b => !(startX >= b.x && startX <= b.x+b.w && startY >= b.y && startY <= b.y+b.h));
             render(); return;
@@ -263,14 +294,14 @@
 
     canvas.onmousemove = (e) => {
         if (!isDrawing) return;
-        render();
+        render(); // 繪製時持續重繪以顯示當前虛線框
         const pos = getMousePos(e);
         const rect = canvas.getBoundingClientRect();
         const visualScale = canvas.width / rect.width;
 
         ctx.strokeStyle = currentMode === 'barcode' ? '#ff4d4f' : (currentMode === 'sn' ? '#52c41a' : '#1890ff');
         ctx.lineWidth = 2 * visualScale;
-        ctx.setLineDash([5 * visualScale, 5 * visualScale]); // 虛線也隨比例調整
+        ctx.setLineDash([5 * visualScale, 5 * visualScale]); // 使用虛線提示
         ctx.strokeRect(startX, startY, pos.x - startX, pos.y - startY);
         ctx.setLineDash([]);
     };
@@ -283,8 +314,11 @@
         isDrawing = false;
         render();
     };
-    canvas.oncontextmenu = (e) => e.preventDefault();
+    canvas.oncontextmenu = (e) => e.preventDefault(); // 禁用畫布選單以支援右鍵刪除
 
+    /**
+     * 批量處理：核心運算與產出
+     */
     document.getElementById('processBtn').onclick = async () => {
         const data = document.getElementById('dataInput').value.trim();
         if (!data) return alert("請輸入序號");
@@ -294,18 +328,23 @@
         rCanvas.width = baseImg.width; rCanvas.height = baseImg.height;
         const preview = document.getElementById('previewArea'); preview.innerHTML = "";
 
+        // 循環每一行資料進行渲染
         for (let i = 0; i < lines.length; i++) {
             const [sn, note] = lines[i].split(',').map(s => s.trim());
-            rCtx.drawImage(baseImg, 0, 0);
+            rCtx.drawImage(baseImg, 0, 0); // 貼上底圖
             for (let b of boxes) {
+                // 第一步：用底色覆蓋原區域
                 rCtx.fillStyle = document.getElementById('bgColor').value;
                 rCtx.fillRect(b.x, b.y, b.w, b.h);
+                // 第二步：渲染條碼或文字
                 if (b.type === 'barcode') await drawBarcode(rCtx, sn, b);
                 else if (b.type === 'sn') drawText(rCtx, sn, b, document.getElementById('snColor').value, document.getElementById('snAlign').value);
                 else if (b.type === 'note') drawText(rCtx, note || "", b, document.getElementById('noteColor').value, document.getElementById('noteAlign').value);
             }
+            // 轉為 Blob 並存入 ZIP 壓縮包
             const blob = await new Promise(res => rCanvas.toBlob(res, 'image/png')), url = URL.createObjectURL(blob);
             zip.file(`ticket_${i+1}.png`, blob);
+            // 產生預覽項目
             const div = document.createElement('div'); div.className = "preview-item";
             div.innerHTML = `<img src="${url}" onclick="showModal('${url}')"><br><small>${sn}</small>`;
             preview.appendChild(div);
@@ -318,6 +357,9 @@
         };
     };
 
+    /**
+     * 產生條碼
+     */
     function drawBarcode(tCtx, text, box) {
         return new Promise(res => {
             const svg = document.getElementById('barcodeSVG');
@@ -328,10 +370,13 @@
         });
     }
 
+    /**
+     * 產生文字
+     */
     function drawText(tCtx, text, box, color, align) {
         tCtx.fillStyle = color;
         tCtx.textBaseline = "middle";
-        let fontSize = box.h * 0.8;
+        let fontSize = box.h * 0.8; // 高度優先：文字高度為框高的 80%
         tCtx.font = `bold ${fontSize}px sans-serif`;
         if (align === 'center') { tCtx.textAlign = "center"; tCtx.fillText(text, box.x + box.w/2, box.y + box.h/2); }
         else if (align === 'left') { tCtx.textAlign = "left"; tCtx.fillText(text, box.x + 5, box.y + box.h/2); }
@@ -339,5 +384,4 @@
     }
 </script>
 </body>
-
 </html>
